@@ -1,0 +1,45 @@
+{
+  "name": "photos",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "node --inspect=5858 -r ts-node/register src/index.ts",
+    "start:watch": "nodemon",
+    "lint": "eslint src/ --ext js,ts"
+  },
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "helmet": "^3.23.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.6",
+    "@types/helmet": "^0.0.47",
+    "eslint": "^7.2.0",
+    "eslint-config-treemmett": "github:treemmett/eslint-config",
+    "husky": "^4.2.5",
+    "nodemon": "^2.0.4",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.5"
+  },
+  "nodemonConfig": {
+    "env": {
+      "NODE_ENV": "development"
+    },
+    "exec": "yarn start",
+    "ext": "ts,js,json",
+    "ignore": [
+      "**/*.test.ts",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn lint"
+    }
+  }
+}
