@@ -10,11 +10,14 @@
   },
   "dependencies": {
     "aws-sdk": "^2.698.0",
+    "class-validator": "^0.12.2",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "helmet": "^3.23.1",
     "multer": "^1.4.2",
     "multer-s3": "^2.9.0",
+    "pg": "^8.2.1",
+    "typeorm": "^0.2.25",
     "uuid": "^8.1.0"
   },
   "devDependencies": {
