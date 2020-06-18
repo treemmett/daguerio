@@ -2,10 +2,10 @@
 /* eslint-disable no-process-exit */
 
 import 'dotenv/config';
+import Thumbnail, { ThumbnailType } from './entities/Thumbnail';
 import { bucketName, s3 } from './helpers/s3';
 import { createConnection, getRepository } from 'typeorm';
 import Photo from './entities/photo';
-import Thumbnail from './entities/Thumbnail';
 import { createReadStream } from 'fs';
 import express from 'express';
 import helmet from 'helmet';
@@ -48,28 +48,8 @@ app.post(
       photo.width = meta.width;
       photo.height = meta.height;
       photo.mime = req.file.mimetype;
-      await getRepository(Photo).save(photo);
-
-      // generate thumbnail
-      const thumbnailId = v4();
-      const thumbnailPath = join(tmpdir(), v4());
-      const thumbnail = await sharp(req.file.path)
-        .resize({
-          fit: 'inside',
-          height: 500,
-          width: 500,
-        })
-        .toFile(thumbnailPath);
-
-      const thumbnailEntity = new Thumbnail(thumbnailId);
-      thumbnailEntity.photo = Promise.resolve(photo);
-      thumbnailEntity.height = thumbnail.height;
-      thumbnailEntity.width = thumbnail.width;
-      thumbnailEntity.size = thumbnail.size;
-      thumbnailEntity.mime = `image/${thumbnail.format}`;
-      await getRepository(Thumbnail).save(thumbnailEntity);
-
       await Promise.all([
+        getRepository(Photo).save(photo),
         s3
           .putObject({
             ACL: 'private',
@@ -80,19 +60,50 @@ app.post(
             Key: `photos/${id}`,
           })
           .promise(),
-        s3
-          .putObject({
-            ACL: 'private',
-            Body: createReadStream(thumbnailPath),
-            Bucket: bucketName,
-            ContentLength: thumbnail.size,
-            ContentType: 'image/png',
-            Key: `thumbnails/${thumbnailId}`,
-          })
-          .promise(),
       ]);
 
-      res.send({ photo, thumnail: thumbnailEntity });
+      // generate thumbnails
+      const thumbnails = await Promise.all(
+        new Array(2).fill(null).map(async (e, i) => {
+          const thumbnailId = v4();
+          const thumbnailPath = join(tmpdir(), v4());
+          const image = sharp(req.file.path).resize({
+            fit: 'inside',
+            height: 500,
+            width: 500,
+          });
+
+          const thumbnail =
+            i === 1
+              ? await image.blur(10).toFile(thumbnailPath)
+              : await image.toFile(thumbnailPath);
+
+          const thumbnailEntity = new Thumbnail(thumbnailId);
+          thumbnailEntity.photo = Promise.resolve(photo);
+          thumbnailEntity.height = thumbnail.height;
+          thumbnailEntity.width = thumbnail.width;
+          thumbnailEntity.size = thumbnail.size;
+          thumbnailEntity.type =
+            i === 1 ? ThumbnailType.BLUR : ThumbnailType.NORMAL;
+          thumbnailEntity.mime = `image/${thumbnail.format}`;
+          await Promise.all([
+            getRepository(Thumbnail).save(thumbnailEntity),
+            s3
+              .putObject({
+                ACL: 'private',
+                Body: createReadStream(thumbnailPath),
+                Bucket: bucketName,
+                ContentLength: thumbnail.size,
+                ContentType: 'image/png',
+                Key: `thumbnails/${thumbnailId}`,
+              })
+              .promise(),
+          ]);
+          return thumbnailEntity;
+        })
+      );
+
+      res.send({ photo, thumbnails });
     } catch (e) {
       res.status(500).send(e);
     }

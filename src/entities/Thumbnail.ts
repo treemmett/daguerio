@@ -17,6 +17,11 @@ import {
 } from 'class-validator';
 import Photo from './photo';
 
+export enum ThumbnailType {
+  NORMAL = 'NORMAL',
+  BLUR = 'BLUR',
+}
+
 @Entity({ name: 'thumbnails' })
 export default class Thumbnail {
   @PrimaryColumn('uuid')
@@ -45,6 +50,9 @@ export default class Thumbnail {
   @IsNotEmpty()
   @MaxLength(32)
   public mime: string;
+
+  @Column({ enum: ThumbnailType, type: 'enum' })
+  public type: ThumbnailType;
 
   @ManyToOne(() => Photo, photo => photo.thumbnails, { onDelete: 'CASCADE' })
   public photo: Promise<Photo>;
