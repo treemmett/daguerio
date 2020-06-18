@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
+  ManyToOne,
   PrimaryColumn,
 } from 'typeorm';
 import {
@@ -15,18 +15,18 @@ import {
   Min,
   validateOrReject,
 } from 'class-validator';
-import Thumbnail from './Thumbnail';
+import Photo from './photo';
 
-@Entity({ name: 'photos' })
-export default class Photo {
+@Entity({ name: 'thumbnails' })
+export default class Thumbnail {
   @PrimaryColumn('uuid')
   @IsUUID('4')
   public readonly id: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'int' })
   @IsNotEmpty()
   @Min(1)
-  @Max(10000000000) // 10 gb
+  @Max(2147483647)
   public size: number;
 
   @Column({ type: 'smallint' })
@@ -46,11 +46,11 @@ export default class Photo {
   @MaxLength(32)
   public mime: string;
 
+  @ManyToOne(() => Photo, photo => photo.thumbnails, { onDelete: 'CASCADE' })
+  public photo: Promise<Photo>;
+
   @CreateDateColumn()
   public readonly uploadedTime: Date;
-
-  @OneToMany(() => Thumbnail, thumbnail => thumbnail.photo)
-  public thumbnails: Promise<Thumbnail[]>;
 
   public constructor(id: string) {
     this.id = id;
