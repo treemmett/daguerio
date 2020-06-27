@@ -16,7 +16,8 @@ import {
   Min,
   validateOrReject,
 } from 'class-validator';
-import Photo from './photo';
+import { bucketName, s3 } from '../helpers/s3';
+import Photo from './Photo';
 
 export enum ThumbnailType {
   NORMAL = 'NORMAL',
@@ -80,5 +81,14 @@ export default class Thumbnail {
   @BeforeUpdate()
   public async validate(): Promise<void> {
     await validateOrReject(this);
+  }
+
+  @Field(() => String, { name: 'url' })
+  public getUrl(): Promise<string> {
+    return s3.getSignedUrlPromise('getObject', {
+      Bucket: bucketName,
+      Expires: 60 * 5,
+      Key: `thumbnails/${this.id}`,
+    });
   }
 }

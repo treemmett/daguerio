@@ -19,6 +19,7 @@ type Photo {
   size: Int!
   thumbnails: [Thumbnail!]!
   uploadedTime: DateTime!
+  url: String!
   width: Int!
 }
 
@@ -34,6 +35,7 @@ type Thumbnail {
   size: Int!
   type: ThumbnailType!
   uploadedTime: DateTime!
+  url: String!
   width: Int!
 }
 

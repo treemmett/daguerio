@@ -3,7 +3,7 @@ import { FileUpload, GraphQLUpload } from 'graphql-upload';
 import Thumbnail, { ThumbnailType } from '../entities/Thumbnail';
 import { bucketName, s3 } from '../helpers/s3';
 import { createReadStream, createWriteStream } from 'fs';
-import Photo from '../entities/photo';
+import Photo from '../entities/Photo';
 import { getRepository } from 'typeorm';
 import { join } from 'path';
 import sharp from 'sharp';

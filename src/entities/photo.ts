@@ -17,6 +17,7 @@ import {
   Min,
   validateOrReject,
 } from 'class-validator';
+import { bucketName, s3 } from '../helpers/s3';
 import Thumbnail from './Thumbnail';
 
 @Entity({ name: 'photos' })
@@ -74,5 +75,14 @@ export default class Photo {
   @BeforeUpdate()
   public async validate(): Promise<void> {
     await validateOrReject(this);
+  }
+
+  @Field(() => String, { name: 'url' })
+  public getUrl(): Promise<string> {
+    return s3.getSignedUrlPromise('getObject', {
+      Bucket: bucketName,
+      Expires: 60 * 5,
+      Key: `photos/${this.id}`,
+    });
   }
 }
