@@ -55,6 +55,12 @@ export default class Photo {
   @MaxLength(32)
   public mime: string;
 
+  @Column({ length: 6, type: 'varchar' })
+  @Field()
+  @IsNotEmpty()
+  @MaxLength(6)
+  public dominantColor: string;
+
   @CreateDateColumn()
   @Field()
   public readonly uploadedTime: Date;

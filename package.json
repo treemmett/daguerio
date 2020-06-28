@@ -13,6 +13,7 @@
     "apollo-server-express": "^2.15.0",
     "aws-sdk": "^2.698.0",
     "class-validator": "^0.12.2",
+    "color-thief-node": "^1.0.3",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-graphql": "^0.9.0",

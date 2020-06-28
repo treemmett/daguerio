@@ -4,6 +4,7 @@ import Thumbnail, { ThumbnailType } from '../entities/Thumbnail';
 import { bucketName, s3 } from '../helpers/s3';
 import { createReadStream, createWriteStream } from 'fs';
 import Photo from '../entities/Photo';
+import { getColorFromURL } from 'color-thief-node';
 import { getRepository } from 'typeorm';
 import { join } from 'path';
 import sharp from 'sharp';
@@ -35,15 +36,20 @@ export default class PhotoResolver {
       sharp(uploadPath).metadata(),
       stat(uploadPath),
     ]);
+
     if (!meta.width || !meta.height) {
       throw new Error('Cannot parse image');
     }
+
     const id = v4();
     const photo = new Photo(id);
     photo.size = stats.size;
     photo.width = meta.width;
     photo.height = meta.height;
     photo.mime = file.mimetype;
+    photo.dominantColor = Buffer.from(
+      await getColorFromURL(uploadPath)
+    ).toString('hex');
     await Promise.all([
       getRepository(Photo).save(photo),
       s3

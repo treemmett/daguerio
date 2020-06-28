@@ -13,6 +13,7 @@ type Mutation {
 }
 
 type Photo {
+  dominantColor: String!
   height: Int!
   id: ID!
   mime: String!
