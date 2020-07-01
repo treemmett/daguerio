@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
+	"image/jpeg"
 	"io"
 	"os"
 
 	"github.com/graphql-go/graphql"
 	handler "github.com/koblas/graphql-handler"
+	"github.com/nfnt/resize"
 )
 
 var uploadScalar = graphql.NewScalar(graphql.ScalarConfig{
@@ -81,8 +84,33 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 				file := params.Args["photo"].(*handler.MultipartFile)
 				defer file.File.Close()
 
-				f, _ := os.Create("test.jpg")
-				io.Copy(f, file.File)
+				imageFile, err := os.Create("test.jpg")
+				if err != nil {
+					return nil, errors.New("Failed to save image\n" + err.Error())
+				}
+
+				_, err = io.Copy(imageFile, file.File)
+				if err != nil {
+					return nil, errors.New("Failed to save image\n" + err.Error())
+				}
+
+				imageFile, err = os.Open("test.jpg")
+				if err != nil {
+					return nil, errors.New("Failed to decode image\n" + err.Error())
+				}
+				img, err := jpeg.Decode(imageFile)
+				if err != nil {
+					return nil, errors.New("Failed to decode image\n" + err.Error())
+				}
+
+				thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
+
+				thumbnailFile, err := os.Create("thumbnail.jpg")
+				if err != nil {
+					return nil, errors.New("Failed to save thumbnail\n" + err.Error())
+				}
+
+				jpeg.Encode(thumbnailFile, thumbnail, nil)
 
 				return photo{
 					ID:   "string",
