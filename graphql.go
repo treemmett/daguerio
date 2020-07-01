@@ -5,7 +5,9 @@ import (
 	"image/jpeg"
 	"io"
 	"os"
+	"strings"
 
+	"github.com/EdlinOrg/prominentcolor"
 	"github.com/esimov/stackblur-go"
 	"github.com/graphql-go/graphql"
 	handler "github.com/koblas/graphql-handler"
@@ -23,9 +25,10 @@ var uploadScalar = graphql.NewScalar(graphql.ScalarConfig{
 })
 
 type photo struct {
-	ID   string `json:"id"`
-	URL  string `json:"url"`
-	Size int    `json:"size"`
+	ID            string `json:"id"`
+	DominantColor string `json:"dominantColor"`
+	URL           string `json:"url"`
+	Size          int    `json:"size"`
 }
 
 var photoType = graphql.NewObject(graphql.ObjectConfig{
@@ -33,6 +36,9 @@ var photoType = graphql.NewObject(graphql.ObjectConfig{
 	Fields: graphql.Fields{
 		"id": &graphql.Field{
 			Type: graphql.NewNonNull(graphql.ID),
+		},
+		"dominantColor": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.String),
 		},
 		"size": &graphql.Field{
 			Type: graphql.Int,
@@ -126,10 +132,18 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 					return nil, errors.New("Failed to save blur\n" + err.Error())
 				}
 
+				// get dominant color
+				colors, err := prominentcolor.Kmeans(img)
+				if err != nil {
+					return nil, errors.New("Unable to find dominant color\n" + err.Error())
+				}
+				dominantColor := strings.ToLower(colors[0].AsString())
+
 				return photo{
-					ID:   "string",
-					URL:  "string",
-					Size: int(file.Header.Size),
+					ID:            "string",
+					DominantColor: dominantColor,
+					URL:           "string",
+					Size:          int(file.Header.Size),
 				}, nil
 			},
 		},
