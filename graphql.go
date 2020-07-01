@@ -27,8 +27,10 @@ var uploadScalar = graphql.NewScalar(graphql.ScalarConfig{
 type photo struct {
 	ID            string `json:"id"`
 	DominantColor string `json:"dominantColor"`
-	URL           string `json:"url"`
+	Height        int    `json:"height"`
 	Size          int    `json:"size"`
+	URL           string `json:"url"`
+	Width         int    `json:"width"`
 }
 
 var photoType = graphql.NewObject(graphql.ObjectConfig{
@@ -40,11 +42,17 @@ var photoType = graphql.NewObject(graphql.ObjectConfig{
 		"dominantColor": &graphql.Field{
 			Type: graphql.NewNonNull(graphql.String),
 		},
+		"height": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.Int),
+		},
 		"size": &graphql.Field{
-			Type: graphql.Int,
+			Type: graphql.NewNonNull(graphql.Int),
 		},
 		"url": &graphql.Field{
-			Type: graphql.String,
+			Type: graphql.NewNonNull(graphql.String),
+		},
+		"width": &graphql.Field{
+			Type: graphql.NewNonNull(graphql.Int),
 		},
 	},
 })
@@ -142,7 +150,9 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 				return photo{
 					ID:            "string",
 					DominantColor: dominantColor,
+					Height:        img.Bounds().Dy(),
 					URL:           "string",
+					Width:         img.Bounds().Dx(),
 					Size:          int(file.Header.Size),
 				}, nil
 			},
