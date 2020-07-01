@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/esimov/stackblur-go"
 	"github.com/graphql-go/graphql"
 	handler "github.com/koblas/graphql-handler"
 	"github.com/nfnt/resize"
@@ -84,6 +85,7 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 				file := params.Args["photo"].(*handler.MultipartFile)
 				defer file.File.Close()
 
+				// save file to disk
 				imageFile, err := os.Create("test.jpg")
 				if err != nil {
 					return nil, errors.New("Failed to save image\n" + err.Error())
@@ -94,6 +96,7 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 					return nil, errors.New("Failed to save image\n" + err.Error())
 				}
 
+				// create thumbnails
 				imageFile, err = os.Open("test.jpg")
 				if err != nil {
 					return nil, errors.New("Failed to decode image\n" + err.Error())
@@ -111,6 +114,17 @@ var mutationType = graphql.NewObject(graphql.ObjectConfig{
 				}
 
 				jpeg.Encode(thumbnailFile, thumbnail, nil)
+
+				// blur thumbnail
+				bluredThumbFile, err := os.Create("blurredThumb.jpg")
+				if err != nil {
+					return nil, errors.New("Failed to blur image\n" + err.Error())
+				}
+
+				err = jpeg.Encode(bluredThumbFile, stackblur.Process(thumbnail, 30), nil)
+				if err != nil {
+					return nil, errors.New("Failed to save blur\n" + err.Error())
+				}
 
 				return photo{
 					ID:   "string",
