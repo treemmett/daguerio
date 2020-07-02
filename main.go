@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -23,7 +22,6 @@ func main() {
 
 	http.Handle("/graphql", generateGQL())
 	err = http.ListenAndServeTLS("0.0.0.0:"+strconv.Itoa(int(Config.Port)), os.Getenv("SSL_CERT"), os.Getenv("SSL_KEY"), nil)
-	fmt.Println(os.Getenv("SSL_CERT"))
 	if err != nil {
 		panic(err)
 	}

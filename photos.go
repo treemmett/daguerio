@@ -2,14 +2,12 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"image/jpeg"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/EdlinOrg/prominentcolor"
-	"github.com/esimov/stackblur-go"
 	"github.com/google/uuid"
 	handler "github.com/koblas/graphql-handler"
 	"github.com/nfnt/resize"
@@ -37,7 +35,6 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		return nil, errors.New("Failed to save image\n" + err.Error())
 	}
 
-	// create thumbnails
 	imageFile, err = os.Open("test.jpg")
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
@@ -45,26 +42,6 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	img, err := jpeg.Decode(imageFile)
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
-	}
-
-	thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
-
-	thumbnailFile, err := os.Create("thumbnail.jpg")
-	if err != nil {
-		return nil, errors.New("Failed to save thumbnail\n" + err.Error())
-	}
-
-	jpeg.Encode(thumbnailFile, thumbnail, nil)
-
-	// blur thumbnail
-	bluredThumbFile, err := os.Create("blurredThumb.jpg")
-	if err != nil {
-		return nil, errors.New("Failed to blur image\n" + err.Error())
-	}
-
-	err = jpeg.Encode(bluredThumbFile, stackblur.Process(thumbnail, 30), nil)
-	if err != nil {
-		return nil, errors.New("Failed to save blur\n" + err.Error())
 	}
 
 	// get dominant color
@@ -79,7 +56,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("ID generation failed\n" + err.Error())
 	}
-	r, err := DB.Query(
+	_, err = DB.Query(
 		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\") VALUES ($1, $2, $3, $4, $5, $6)",
 		id.String(),
 		int(photo.Header.Size),
@@ -91,7 +68,22 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("Failed to save image to db\n" + err.Error())
 	}
-	fmt.Println(r)
+
+	// create thumbnails
+	thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
+
+	thumbnailFile, err := os.Create("thumbnail.jpg")
+	if err != nil {
+		return nil, errors.New("Failed to save thumbnail\n" + err.Error())
+	}
+
+	jpeg.Encode(thumbnailFile, thumbnail, nil)
+
+	// blur thumbnailS
+	err = createThumbnails(img, id.String())
+	if err != nil {
+		return nil, errors.New("Failed to create thumbnails\n" + err.Error())
+	}
 
 	return &Photo{
 		ID:            id.String(),
