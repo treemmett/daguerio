@@ -27,6 +27,8 @@ func createThumbnails(img image.Image, photoID string) error {
 	if err != nil {
 		return err
 	}
+	defer thumbnailFile.Close()
+
 	err = jpeg.Encode(thumbnailFile, thumbnail, nil)
 	if err != nil {
 		return err
@@ -63,6 +65,7 @@ func createThumbnails(img image.Image, photoID string) error {
 		removeThumbnail(thumbnailID.String())
 		return err
 	}
+	defer blurredThumbnailFile.Close()
 
 	err = jpeg.Encode(blurredThumbnailFile, stackblur.Process(thumbnail, 30), nil)
 	if err != nil {
@@ -82,7 +85,7 @@ func createThumbnails(img image.Image, photoID string) error {
 		return err
 	}
 
-	_, err = DB.Query(
+	_, err = DB.Exec(
 		"INSERT INTO thumbnails (id, size, width, height, mime, type, \"photoId\") VALUES ($1, $2, $3, $4, $5, $6, $7)",
 		blurredID.String(),
 		blurredStat.Size(),

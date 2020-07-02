@@ -29,6 +29,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("Failed to save image\n" + err.Error())
 	}
+	defer imageFile.Close()
 
 	_, err = io.Copy(imageFile, photo.File)
 	if err != nil {
@@ -39,6 +40,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
 	}
+	defer imageFile.Close()
 	img, err := jpeg.Decode(imageFile)
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
@@ -56,7 +58,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("ID generation failed\n" + err.Error())
 	}
-	_, err = DB.Query(
+	_, err = DB.Exec(
 		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\") VALUES ($1, $2, $3, $4, $5, $6)",
 		id.String(),
 		int(photo.Header.Size),
@@ -76,6 +78,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	if err != nil {
 		return nil, errors.New("Failed to save thumbnail\n" + err.Error())
 	}
+	defer thumbnailFile.Close()
 
 	jpeg.Encode(thumbnailFile, thumbnail, nil)
 
