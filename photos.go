@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"image/jpeg"
 	"io"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/EdlinOrg/prominentcolor"
 	"github.com/esimov/stackblur-go"
+	"github.com/google/uuid"
 	handler "github.com/koblas/graphql-handler"
 	"github.com/nfnt/resize"
 )
@@ -72,8 +74,27 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	}
 	dominantColor := strings.ToLower(colors[0].AsString())
 
+	// save image to database
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return nil, errors.New("ID generation failed\n" + err.Error())
+	}
+	r, err := DB.Query(
+		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\") VALUES ($1, $2, $3, $4, $5, $6)",
+		id.String(),
+		int(photo.Header.Size),
+		img.Bounds().Dx(),
+		img.Bounds().Dy(),
+		photo.Header.Header.Get("Content-Type"),
+		dominantColor,
+	)
+	if err != nil {
+		return nil, errors.New("Failed to save image to db\n" + err.Error())
+	}
+	fmt.Println(r)
+
 	return &Photo{
-		ID:            "string",
+		ID:            id.String(),
 		DominantColor: dominantColor,
 		Height:        img.Bounds().Dy(),
 		URL:           "string",

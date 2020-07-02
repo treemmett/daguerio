@@ -11,6 +11,7 @@ import (
 
 func main() {
 	initConfig()
+	connectToSQL()
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
