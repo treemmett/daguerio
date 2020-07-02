@@ -11,8 +11,17 @@ import (
 	"github.com/nfnt/resize"
 )
 
-func createThumbnails(img image.Image, photoID string) error {
+// Thumbnail for an upload photo
+type Thumbnail struct {
+	ID      string `json:"id"`
+	Height  int    `json:"height"`
+	PhotoID string `json:"photoId"`
+	Size    int    `json:"size"`
+	Type    string `json:"type"`
+	Width   int    `json:"width"`
+}
 
+func createThumbnails(img image.Image, photoID string) error {
 	thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
 	thumbnailFile, err := os.Create("thumbnail.jpg")
 	if err != nil {
@@ -89,6 +98,37 @@ func createThumbnails(img image.Image, photoID string) error {
 	}
 
 	return nil
+}
+
+func getThumbnails(photoID string) ([]Thumbnail, error) {
+	rows, err := DB.Query(
+		"SELECT id, height, \"photoId\", size, type, width FROM thumbnails WHERE \"photoId\" = $1",
+		photoID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var thumbnails []Thumbnail
+
+	for rows.Next() {
+		var t Thumbnail
+		err = rows.Scan(
+			&t.ID,
+			&t.Height,
+			&t.PhotoID,
+			&t.Size,
+			&t.Type,
+			&t.Width,
+		)
+		if err != nil {
+			return nil, err
+		}
+		thumbnails = append(thumbnails, t)
+	}
+
+	return thumbnails, nil
 }
 
 func removeThumbnail(id string) error {
