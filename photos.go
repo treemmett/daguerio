@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/EdlinOrg/prominentcolor"
 	"github.com/google/uuid"
@@ -20,7 +21,6 @@ type Photo struct {
 	DominantColor string `json:"dominantColor"`
 	Height        int    `json:"height"`
 	Size          int    `json:"size"`
-	URL           string `json:"url"`
 	Width         int    `json:"width"`
 }
 
@@ -96,7 +96,6 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		ID:            id.String(),
 		DominantColor: dominantColor,
 		Height:        img.Bounds().Dy(),
-		URL:           "string",
 		Width:         img.Bounds().Dx(),
 		Size:          int(photo.Header.Size),
 	}, nil
@@ -123,4 +122,12 @@ func getPhotos() ([]Photo, error) {
 	}
 
 	return photos, nil
+}
+
+func getPhotoURL(id string) (string, error) {
+	url, err := S3.PresignedGetObject(Config.S3Bucket, "photos/"+id, time.Second*60*60, nil)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
 }

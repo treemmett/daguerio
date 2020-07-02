@@ -6,6 +6,7 @@ import (
 	"image/jpeg"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/esimov/stackblur-go"
 	"github.com/google/uuid"
@@ -118,6 +119,14 @@ func getThumbnails(photoID string) ([]Thumbnail, error) {
 	}
 
 	return thumbnails, nil
+}
+
+func getThumbnailURL(id string) (string, error) {
+	url, err := S3.PresignedGetObject(Config.S3Bucket, "thumbnails/"+id, time.Second*60*60, nil)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
 }
 
 func removeThumbnail(id string) error {
