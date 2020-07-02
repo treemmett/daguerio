@@ -96,14 +96,24 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 }
 
 func getPhotos() ([]Photo, error) {
-	return []Photo{
-		{
-			ID:  "a",
-			URL: "a.com",
-		},
-		{
-			ID:  "b",
-			URL: "b.com",
-		},
-	}, nil
+	rows, err := DB.Query("SELECT id, \"dominantColor\", height, size, width FROM photos")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var photos []Photo
+	for rows.Next() {
+		var p Photo
+		err = rows.Scan(
+			&p.ID,
+			&p.DominantColor,
+			&p.Height,
+			&p.Size,
+			&p.Width,
+		)
+		photos = append(photos, p)
+	}
+
+	return photos, nil
 }
