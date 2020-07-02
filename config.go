@@ -9,14 +9,18 @@ import (
 
 // Configuration for application
 type Configuration struct {
-	Port     int64
-	PsqlDb   string
-	PsqlHost string
-	PsqlPass string
-	PsqlPort int64
-	PsqlUser string
-	SSLCert  string
-	SSLKey   string
+	Port        int64
+	PsqlDb      string
+	PsqlHost    string
+	PsqlPass    string
+	PsqlPort    int64
+	PsqlUser    string
+	S3AccessKey string
+	S3Bucket    string
+	S3Endpoint  string
+	S3KeyID     string
+	SSLCert     string
+	SSLKey      string
 }
 
 // Config for application
@@ -60,13 +64,17 @@ func initConfig() {
 	}
 
 	Config = Configuration{
-		Port:     Port,
-		PsqlDb:   PsqlDb,
-		PsqlHost: PsqlHost,
-		PsqlPass: os.Getenv("PSQL_PASS"),
-		PsqlPort: PsqlPort,
-		PsqlUser: PsqlUser,
-		SSLCert:  os.Getenv("SSL_CERT"),
-		SSLKey:   os.Getenv("SSL_KEY"),
+		Port:        Port,
+		PsqlDb:      PsqlDb,
+		PsqlHost:    PsqlHost,
+		PsqlPass:    os.Getenv("PSQL_PASS"),
+		PsqlPort:    PsqlPort,
+		PsqlUser:    PsqlUser,
+		S3AccessKey: os.Getenv("S3_ACCESS_KEY"),
+		S3Bucket:    os.Getenv("S3_BUCKET"),
+		S3Endpoint:  os.Getenv("S3_ENDPOINT"),
+		S3KeyID:     os.Getenv("S3_KEY_ID"),
+		SSLCert:     os.Getenv("SSL_CERT"),
+		SSLKey:      os.Getenv("SSL_KEY"),
 	}
 }

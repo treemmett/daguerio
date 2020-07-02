@@ -10,6 +10,7 @@ import (
 
 func main() {
 	initConfig()
+	initS3()
 	connectToSQL()
 	err := godotenv.Load()
 	if err != nil {

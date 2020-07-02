@@ -4,13 +4,14 @@ import (
 	"errors"
 	"image/jpeg"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/EdlinOrg/prominentcolor"
 	"github.com/google/uuid"
 	handler "github.com/koblas/graphql-handler"
-	"github.com/nfnt/resize"
+	"github.com/minio/minio-go"
 )
 
 // Photo is a user uploaded picture
@@ -24,24 +25,25 @@ type Photo struct {
 }
 
 func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
-	// save file to disk
-	imageFile, err := os.Create("test.jpg")
+	// save file to temp
+	file, err := ioutil.TempFile(os.TempDir(), "photo-")
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	defer os.Remove(file.Name())
+
+	_, err = io.Copy(file, photo.File)
 	if err != nil {
 		return nil, errors.New("Failed to save image\n" + err.Error())
 	}
-	defer imageFile.Close()
 
-	_, err = io.Copy(imageFile, photo.File)
-	if err != nil {
-		return nil, errors.New("Failed to save image\n" + err.Error())
-	}
-
-	imageFile, err = os.Open("test.jpg")
+	file, err = os.Open(file.Name())
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
 	}
-	defer imageFile.Close()
-	img, err := jpeg.Decode(imageFile)
+	defer file.Close()
+	img, err := jpeg.Decode(file)
 	if err != nil {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
 	}
@@ -72,20 +74,22 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 	}
 
 	// create thumbnails
-	thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
-
-	thumbnailFile, err := os.Create("thumbnail.jpg")
-	if err != nil {
-		return nil, errors.New("Failed to save thumbnail\n" + err.Error())
-	}
-	defer thumbnailFile.Close()
-
-	jpeg.Encode(thumbnailFile, thumbnail, nil)
-
-	// blur thumbnailS
 	err = createThumbnails(img, id.String())
 	if err != nil {
 		return nil, errors.New("Failed to create thumbnails\n" + err.Error())
+	}
+
+	// add image to s3
+	file, err = os.Open(file.Name())
+	if err != nil {
+		return nil, errors.New("Failed to decode image\n" + err.Error())
+	}
+	defer file.Close()
+	_, err = S3.PutObject(Config.S3Bucket, "photos/"+id.String(), file, photo.Header.Size, minio.PutObjectOptions{
+		ContentType: photo.Header.Header.Get("Content-Type"),
+	})
+	if err != nil {
+		return nil, errors.New("Failed to save image in store\n" + err.Error())
 	}
 
 	return &Photo{

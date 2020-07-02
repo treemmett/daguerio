@@ -4,10 +4,12 @@ import (
 	"errors"
 	"image"
 	"image/jpeg"
+	"io/ioutil"
 	"os"
 
 	"github.com/esimov/stackblur-go"
 	"github.com/google/uuid"
+	"github.com/minio/minio-go"
 	"github.com/nfnt/resize"
 )
 
@@ -23,81 +25,65 @@ type Thumbnail struct {
 
 func createThumbnails(img image.Image, photoID string) error {
 	thumbnail := resize.Thumbnail(500, 500, img, resize.Bicubic)
-	thumbnailFile, err := os.Create("thumbnail.jpg")
-	if err != nil {
-		return err
-	}
-	defer thumbnailFile.Close()
 
-	err = jpeg.Encode(thumbnailFile, thumbnail, nil)
-	if err != nil {
-		return err
-	}
+	for i := 0; i < 2; i++ {
+		var img image.Image
+		var thumbType string
 
-	thumbnailID, err := uuid.NewRandom()
-	if err != nil {
-		return err
-	}
+		if i == 0 {
+			img = thumbnail
+			thumbType = "NORMAL"
+		} else {
+			img = stackblur.Process(thumbnail, 30)
+			thumbType = "BLUR"
+		}
 
-	thumbnailStat, err := thumbnailFile.Stat()
-	if err != nil {
-		return err
-	}
+		file, err := ioutil.TempFile(os.TempDir(), "thumbnail-")
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		defer os.Remove(file.Name())
 
-	_, err = DB.Query(
-		"INSERT INTO thumbnails (id, size, width, height, mime, type, \"photoId\") VALUES ($1, $2, $3, $4, $5, $6, $7)",
-		thumbnailID.String(),
-		thumbnailStat.Size(),
-		thumbnail.Bounds().Dx(),
-		thumbnail.Bounds().Dy(),
-		"image/jpeg",
-		"NORMAL",
-		photoID,
-	)
+		err = jpeg.Encode(file, img, nil)
+		if err != nil {
+			return err
+		}
 
-	if err != nil {
-		return err
-	}
+		id, err := uuid.NewRandom()
+		if err != nil {
+			return err
+		}
 
-	// create blurred thumbnail
-	blurredThumbnailFile, err := os.Create("blurred_thumbnail.jpg")
-	if err != nil {
-		removeThumbnail(thumbnailID.String())
-		return err
-	}
-	defer blurredThumbnailFile.Close()
+		stats, err := file.Stat()
+		if err != nil {
+			return err
+		}
 
-	err = jpeg.Encode(blurredThumbnailFile, stackblur.Process(thumbnail, 30), nil)
-	if err != nil {
-		removeThumbnail(thumbnailID.String())
-		return err
-	}
+		file, err = os.Open(file.Name())
+		if err != nil {
+			return err
+		}
+		_, err = S3.PutObject(Config.S3Bucket, "thumbnails/"+id.String(), file, stats.Size(), minio.PutObjectOptions{
+			ContentType: "image/jpeg",
+		})
+		if err != nil {
+			return err
+		}
 
-	blurredID, err := uuid.NewRandom()
-	if err != nil {
-		removeThumbnail(thumbnailID.String())
-		return err
-	}
-
-	blurredStat, err := blurredThumbnailFile.Stat()
-	if err != nil {
-		removeThumbnail(thumbnailID.String())
-		return err
-	}
-
-	_, err = DB.Exec(
-		"INSERT INTO thumbnails (id, size, width, height, mime, type, \"photoId\") VALUES ($1, $2, $3, $4, $5, $6, $7)",
-		blurredID.String(),
-		blurredStat.Size(),
-		thumbnail.Bounds().Dx(),
-		thumbnail.Bounds().Dy(),
-		"image/jpeg",
-		"BLUR",
-		photoID,
-	)
-	if err != nil {
-		removeThumbnail(thumbnailID.String())
-		return err
+		_, err = DB.Exec(
+			"INSERT INTO thumbnails (id, size, width, height, mime, type, \"photoId\") VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			id.String(),
+			stats.Size(),
+			img.Bounds().Dx(),
+			img.Bounds().Dy(),
+			"image/jpeg",
+			thumbType,
+			photoID,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
