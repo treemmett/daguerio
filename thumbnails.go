@@ -90,7 +90,7 @@ func createThumbnails(img image.Image, photoID string) error {
 	return nil
 }
 
-func getThumbnails(photoID string) ([]Thumbnail, error) {
+func getThumbnails(photoID string) ([]*Thumbnail, error) {
 	rows, err := DB.Query(
 		"SELECT id, height, \"photoId\", size, type, width FROM thumbnails WHERE \"photoId\" = $1",
 		photoID,
@@ -100,7 +100,7 @@ func getThumbnails(photoID string) ([]Thumbnail, error) {
 	}
 	defer rows.Close()
 
-	var thumbnails []Thumbnail
+	var thumbnails []*Thumbnail
 
 	for rows.Next() {
 		var t Thumbnail
@@ -115,7 +115,7 @@ func getThumbnails(photoID string) ([]Thumbnail, error) {
 		if err != nil {
 			return nil, err
 		}
-		thumbnails = append(thumbnails, t)
+		thumbnails = append(thumbnails, &t)
 	}
 
 	return thumbnails, nil

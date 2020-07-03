@@ -46,7 +46,7 @@ func generateGQL() *handler.Handler {
 			"url": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-					return getThumbnailURL(params.Source.(Thumbnail).ID)
+					return getThumbnailURL(params.Source.(*Thumbnail).ID)
 				},
 			},
 			"width": &graphql.Field{
@@ -73,13 +73,13 @@ func generateGQL() *handler.Handler {
 			"thumbnails": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.NewList(thumbnailType)),
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-					return getThumbnails(params.Source.(Photo).ID)
+					return getThumbnails(params.Source.(*Photo).ID)
 				},
 			},
 			"url": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
-					return getPhotoURL(params.Source.(Photo).ID)
+					return getPhotoURL(params.Source.(*Photo).ID)
 				},
 			},
 			"width": &graphql.Field{
