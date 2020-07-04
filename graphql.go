@@ -55,6 +55,18 @@ func generateGQL() *handler.Handler {
 		},
 	})
 
+	coordinatesType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Coordinates",
+		Fields: graphql.Fields{
+			"longitude": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.Float),
+			},
+			"latitude": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.Float),
+			},
+		},
+	})
+
 	photoType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Photo",
 		Fields: graphql.Fields{
@@ -63,6 +75,26 @@ func generateGQL() *handler.Handler {
 			},
 			"dominantColor": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
+			},
+			"location": &graphql.Field{
+				Type: coordinatesType,
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					type Coordinates struct {
+						Latitude  float64
+						Longitude float64
+					}
+
+					photo := params.Source.(*Photo)
+
+					if photo.Latitude == nil || photo.Longitude == nil {
+						return nil, nil
+					}
+
+					return Coordinates{
+						Latitude:  *photo.Latitude,
+						Longitude: *photo.Longitude,
+					}, nil
+				},
 			},
 			"height": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.Int),

@@ -18,11 +18,13 @@ import (
 
 // Photo is a user uploaded picture
 type Photo struct {
-	ID            string `json:"id"`
-	DominantColor string `json:"dominantColor"`
-	Height        int    `json:"height"`
-	Size          int    `json:"size"`
-	Width         int    `json:"width"`
+	ID            string   `json:"id"`
+	DominantColor string   `json:"dominantColor"`
+	Latitude      *float64 `json:"latitude"`
+	Longitude     *float64 `json:"longitude"`
+	Height        int      `json:"height"`
+	Size          int      `json:"size"`
+	Width         int      `json:"width"`
 }
 
 func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
@@ -135,7 +137,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 }
 
 func getPhotos() ([]*Photo, error) {
-	rows, err := DB.Query("SELECT id, \"dominantColor\", height, size, width FROM photos")
+	rows, err := DB.Query("SELECT id, \"dominantColor\", height, size, width, latitude, longitude FROM photos")
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +152,8 @@ func getPhotos() ([]*Photo, error) {
 			&p.Height,
 			&p.Size,
 			&p.Width,
+			&p.Latitude,
+			&p.Longitude,
 		)
 		photos = append(photos, &p)
 	}
