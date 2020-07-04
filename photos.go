@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	handler "github.com/koblas/graphql-handler"
 	"github.com/minio/minio-go"
+	"github.com/rwcarlsen/goexif/exif"
 )
 
 // Photo is a user uploaded picture
@@ -48,6 +49,35 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		return nil, errors.New("Failed to decode image\n" + err.Error())
 	}
 
+	// get metadata
+	file, err = os.Open(file.Name())
+	if err != nil {
+		return nil, errors.New("Failed to decode image\n" + err.Error())
+	}
+	defer file.Close()
+
+	var time *time.Time = nil
+	var lat *float64 = nil
+	var long *float64 = nil
+	meta, err := exif.Decode(file)
+	if err == nil {
+		timeActual, err := meta.DateTime()
+		if err != nil {
+			time = nil
+		} else {
+			time = &timeActual
+		}
+
+		latActual, longActual, err := meta.LatLong()
+		if err != nil {
+			lat = nil
+			long = nil
+		} else {
+			lat = &latActual
+			long = &longActual
+		}
+	}
+
 	// get dominant color
 	colors, err := prominentcolor.Kmeans(img)
 	if err != nil {
@@ -61,13 +91,16 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		return nil, errors.New("ID generation failed\n" + err.Error())
 	}
 	_, err = DB.Exec(
-		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\") VALUES ($1, $2, $3, $4, $5, $6)",
+		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\", latitude, longitude, datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
 		id.String(),
 		int(photo.Header.Size),
 		img.Bounds().Dx(),
 		img.Bounds().Dy(),
 		photo.Header.Header.Get("Content-Type"),
 		dominantColor,
+		lat,
+		long,
+		time,
 	)
 	if err != nil {
 		return nil, errors.New("Failed to save image to db\n" + err.Error())
