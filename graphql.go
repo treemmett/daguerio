@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/graphql-go/graphql"
 	handler "github.com/koblas/graphql-handler"
 )
@@ -180,6 +182,20 @@ func generateGQL() *handler.Handler {
 				},
 				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 					return deletePhoto(params.Args["id"].(string))
+				},
+			},
+			"setPhotoDate": &graphql.Field{
+				Type: photoType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+					"date": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.DateTime),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					return setPhotoDate(params.Args["id"].(string), params.Args["date"].(time.Time))
 				},
 			},
 			"setPhotoLocation": &graphql.Field{
