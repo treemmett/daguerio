@@ -160,6 +160,17 @@ func generateGQL() *handler.Handler {
 					return addPhoto(file)
 				},
 			},
+			"deletePhoto": &graphql.Field{
+				Type: graphql.Boolean,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					return deletePhoto(params.Args["id"].(string))
+				},
+			},
 		},
 	})
 

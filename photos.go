@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"image/jpeg"
 	"io"
 	"io/ioutil"
@@ -136,6 +137,42 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		Width:         img.Bounds().Dx(),
 		Size:          int(photo.Header.Size),
 	}, nil
+}
+
+func deletePhoto(photoID string) (bool, error) {
+	// get thumbnails of photo first
+	thumbnails, err := getThumbnails(photoID)
+	if err != nil {
+		return false, err
+	}
+
+	for _, thumbnail := range thumbnails {
+		err = removeThumbnail(thumbnail.ID)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	err = S3.RemoveObject(Config.S3Bucket, "photos/"+photoID)
+	if err != nil {
+		return false, err
+	}
+
+	result, err := DB.Exec("DELETE FROM photos WHERE id = $1", photoID)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	if rowsAffected == 0 {
+		return false, fmt.Errorf("Failed to delete photo")
+	}
+
+	return true, nil
 }
 
 func getPhotos() ([]*Photo, error) {

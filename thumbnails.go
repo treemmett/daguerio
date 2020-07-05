@@ -1,7 +1,7 @@
 package main
 
 import (
-	"errors"
+	"fmt"
 	"image"
 	"image/jpeg"
 	"io/ioutil"
@@ -130,17 +130,23 @@ func getThumbnailURL(id string) (string, error) {
 }
 
 func removeThumbnail(id string) error {
-	rows, err := DB.Exec("DELETE FROM thumbnails WHERE id = $1", id)
-	if err != nil {
-		return err
-	}
-	count, err := rows.RowsAffected()
+	err := S3.RemoveObject(Config.S3Bucket, "thumbnails/"+id)
 	if err != nil {
 		return err
 	}
 
-	if count == 0 {
-		return errors.New("Thumbnail not found")
+	result, err := DB.Exec("DELETE FROM thumbnails WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("Failed to delete thumbnail")
 	}
 
 	return nil
