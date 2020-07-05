@@ -129,6 +129,17 @@ func generateGQL() *handler.Handler {
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			"photo": &graphql.Field{
+				Type: photoType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					return getPhoto(params.Args["id"].(string))
+				},
+			},
 			"photos": &graphql.Field{
 				Args: graphql.FieldConfigArgument{
 					"photo": &graphql.ArgumentConfig{

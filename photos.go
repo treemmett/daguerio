@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"image/jpeg"
@@ -173,6 +174,29 @@ func deletePhoto(photoID string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func getPhoto(ID string) (*Photo, error) {
+	row := DB.QueryRow("SELECT id, date, \"dateUploaded\", \"dominantColor\", height, size, width, latitude, longitude FROM photos WHERE id = $1", ID)
+	var p Photo
+	err := row.Scan(
+		&p.ID,
+		&p.Date,
+		&p.DateUploaded,
+		&p.DominantColor,
+		&p.Height,
+		&p.Size,
+		&p.Width,
+		&p.Latitude,
+		&p.Longitude,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("Photo not found")
+		}
+		return nil, err
+	}
+	return &p, nil
 }
 
 func getPhotos() ([]*Photo, error) {
