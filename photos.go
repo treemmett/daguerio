@@ -18,13 +18,15 @@ import (
 
 // Photo is a user uploaded picture
 type Photo struct {
-	ID            string   `json:"id"`
-	DominantColor string   `json:"dominantColor"`
-	Latitude      *float64 `json:"latitude"`
-	Longitude     *float64 `json:"longitude"`
-	Height        int      `json:"height"`
-	Size          int      `json:"size"`
-	Width         int      `json:"width"`
+	ID            string     `json:"id"`
+	Date          *time.Time `json:"date"`
+	DateUploaded  *time.Time `json:"dateUploaded"`
+	DominantColor string     `json:"dominantColor"`
+	Latitude      *float64   `json:"latitude"`
+	Longitude     *float64   `json:"longitude"`
+	Height        int        `json:"height"`
+	Size          int        `json:"size"`
+	Width         int        `json:"width"`
 }
 
 func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
@@ -93,7 +95,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 		return nil, errors.New("ID generation failed\n" + err.Error())
 	}
 	_, err = DB.Exec(
-		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\", latitude, longitude, datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+		"INSERT INTO photos (id, size, width, height, mime, \"dominantColor\", latitude, longitude, date) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
 		id.String(),
 		int(photo.Header.Size),
 		img.Bounds().Dx(),
@@ -137,7 +139,7 @@ func addPhoto(photo *handler.MultipartFile) (*Photo, error) {
 }
 
 func getPhotos() ([]*Photo, error) {
-	rows, err := DB.Query("SELECT id, \"dominantColor\", height, size, width, latitude, longitude FROM photos")
+	rows, err := DB.Query("SELECT id, date, \"dateUploaded\", \"dominantColor\", height, size, width, latitude, longitude FROM photos")
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +150,8 @@ func getPhotos() ([]*Photo, error) {
 		var p Photo
 		err = rows.Scan(
 			&p.ID,
+			&p.Date,
+			&p.DateUploaded,
 			&p.DominantColor,
 			&p.Height,
 			&p.Size,

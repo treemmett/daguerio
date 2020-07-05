@@ -73,6 +73,12 @@ func generateGQL() *handler.Handler {
 			"id": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.ID),
 			},
+			"date": &graphql.Field{
+				Type: graphql.DateTime,
+			},
+			"dateUploaded": &graphql.Field{
+				Type: graphql.DateTime,
+			},
 			"dominantColor": &graphql.Field{
 				Type: graphql.NewNonNull(graphql.String),
 			},
