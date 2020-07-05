@@ -182,6 +182,23 @@ func generateGQL() *handler.Handler {
 					return deletePhoto(params.Args["id"].(string))
 				},
 			},
+			"setPhotoLocation": &graphql.Field{
+				Type: photoType,
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.ID),
+					},
+					"latitude": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Float),
+					},
+					"longitude": &graphql.ArgumentConfig{
+						Type: graphql.NewNonNull(graphql.Float),
+					},
+				},
+				Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+					return setPhotoLocation(params.Args["id"].(string), params.Args["latitude"].(float64), params.Args["longitude"].(float64))
+				},
+			},
 		},
 	})
 

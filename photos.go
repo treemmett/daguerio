@@ -233,3 +233,25 @@ func getPhotoURL(id string) (string, error) {
 	}
 	return url.String(), nil
 }
+
+func setPhotoLocation(id string, latitude float64, longitude float64) (*Photo, error) {
+	result, err := DB.Exec(
+		"UPDATE photos SET latitude = $1, longitude = $2 WHERE id = $3",
+		latitude,
+		longitude,
+		id,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("Photo not found")
+		}
+		return nil, err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected != 1 {
+		return nil, fmt.Errorf("Failed to update photo")
+	}
+
+	return getPhoto(id)
+}
